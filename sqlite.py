@@ -38,20 +38,45 @@ class SQLiteQuery:
 		self.cursor = db.database.cursor()
 		self.sql = ""
 		self.parameters = []
+		self.execute_completed = False
 
 	def __del__(self):
 		self.cursor.close()
+
+	def __iter__(self):
+		self.reexecute()
+		return self
+
+	def __next__(self):
+		row = self.fetch_one(self.col)
+		if not row:
+			raise StopIteration
+		return row
+
+	def column(self, column: str = None):
+		self.col = column
+		return self
 
 	def append(self, sql: str, *parameters):
 		if sql:
 			self.sql += " " + sql
 		if parameters:
 			self.parameters.extend(parameters)
+		return self
 
 	def execute(self):
-		self.cursor.execute(self.sql, *self.parameters)
+		if not self.execute_completed:
+			self.cursor.execute(self.sql, *self.parameters)
+			self.execute_completed = True
+		return self
+
+	def reexecute(self):
+		self.execute_completed = False
+		self.execute()
+		return self
 
 	def fetch_all(self, column: str = None):
+		self.column(column)
 		self.execute()
 		results = []
 		for result in self.cursor.fetchall():
@@ -59,11 +84,12 @@ class SQLiteQuery:
 			for i, column_definition in enumerate(self.cursor.description):
 				row[column_definition[0]] = result[i]
 			results.append(row)
-		if column:
-			results = array_column(results, column)
+		if self.col:
+			results = array_column(results, self.col)
 		return results
 
 	def fetch_one(self, column: str = None):
+		self.column(column)
 		self.execute()
 		result = self.cursor.fetchone()
 		if not result:
@@ -71,8 +97,8 @@ class SQLiteQuery:
 		row = {}
 		for i, column_definition in enumerate(self.cursor.description):
 			row[column_definition[0]] = result[i]
-		if column:
-			row = row[column]
+		if self.col:
+			row = row[self.col]
 		return row
 
 	def insert_id(self):
