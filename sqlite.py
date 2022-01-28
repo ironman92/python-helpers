@@ -13,7 +13,13 @@ class SQLiteDatabase:
 
 	def execute(self, query, *parameters) -> list:
 		cursor = self.database.cursor()
-		cursor.execute(query, parameters)
+		try:
+			cursor.execute(query, parameters)
+		except Exception as e:
+			print(e)
+			print(query)
+			print(parameters)
+			raise e
 		results = cursor.fetchall()
 		cursor.close()
 		return results
@@ -66,7 +72,13 @@ class SQLiteQuery:
 
 	def execute(self):
 		if not self.execute_completed:
-			self.cursor.execute(self.sql, *self.parameters)
+			try:
+				self.cursor.execute(self.sql, *self.parameters)
+			except Exception as e:
+				print(e)
+				print(self.sql)
+				print(self.parameters)
+				raise e
 			self.execute_completed = True
 		return self
 
