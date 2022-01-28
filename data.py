@@ -30,6 +30,10 @@ def date_difference(t1, t2) -> timedelta:
 
 
 
-
-def array_column(array, column):
+def array_column(array, column) -> list:
 	return [row.get(column) for row in array]
+
+
+
+def array_unique(array) -> list:
+	return list(set(array))
