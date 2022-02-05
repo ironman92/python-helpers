@@ -45,6 +45,7 @@ class SQLiteQuery:
 		self.sql = ""
 		self.parameters = []
 		self.execute_completed = False
+		self.col = None
 
 	def __del__(self):
 		self.cursor.close()
