@@ -50,9 +50,9 @@ class ThreadPool:
 	def __del__(self):
 		self.kill()
 
-	def schedule(self, job: Job):
+	def schedule(self, *job: Job):
 		with self.concurrency:
-			self.job_queue.append(job)
+			self.job_queue += job
 			self.concurrency.notify_all()
 
 	def kernel(self):
