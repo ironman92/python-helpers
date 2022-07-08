@@ -9,10 +9,28 @@ class Job:
 		self.parameters = parameters
 		self.exception = 0
 		self.result = None
+		self.dependencies = []
+		self.has_run = False
+
+	def is_ready(self):
+		for dependency in self.dependencies:
+			if dependency.has_run == False:
+				return False
+		return True
+
+	def after(self, *preceding_job):
+		self.dependencies += preceding_job
+		return self
+
+	def before(self, *following_job):
+		for job in following_job:
+			job.after(self)
+		return self
 
 	def run(self):
 		try:
 			self.result = self.function(*self.parameters)
+			self.has_run = True
 		except Exception as e:
 			print(e)
 			self.exception = e
@@ -55,14 +73,21 @@ class ThreadPool:
 			self.job_queue += job
 			self.concurrency.notify_all()
 
+	def find_job(self) -> Job:
+		for job in self.job_queue:
+			if job.is_ready():
+				return job
+		return None
+
 	def kernel(self):
 		while self.pool_enabled:
 			with self.concurrency:
-				if len(self.job_queue) == 0:
+				job = self.find_job()
+				if job == None:
 					self.concurrency.wait()
 					continue
 				self.working_threads += 1
-				job = self.job_queue.pop(0)
+				self.job_queue.remove(job)
 			Job.run(job)
 			with self.concurrency:
 				self.completed.append(job)
